@@ -87,12 +87,13 @@ namespace VkBatchPhotoUploader
             var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
             for(int i = 0; i < albums.Count; i++)
             {
-                Console.BackgroundColor = (ConsoleColor)new Random().Next(0, 12);
+                Console.BackgroundColor = (ConsoleColor)new Random().Next(1, 5);
                 Console.Write("album#" + i.ToString());
                 Console.Write(" name: " + albums[i].Title);
                 Console.Write(", ID: " + albums[i].Id.ToString());
                 Console.WriteLine(", photos count: " + albums[i].Size.ToString());
             }
+            Console.BackgroundColor = 0;
             Console.Write("# of desired album: ");
 
             if(int.TryParse(Console.ReadLine(), out int id))
