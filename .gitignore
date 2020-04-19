@@ -10,7 +10,7 @@
 *.pdb
 *.ldf
 
-/.vs/
+.vs/
 
 [Oo]bj/
 [Rr]elease/

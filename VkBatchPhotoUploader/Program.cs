@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Text;
 using System.Windows.Forms;
 using VkNet;
@@ -21,17 +22,16 @@ namespace VkBatchPhotoUploader
             var api = new VkApi();
             api.Authorize(new ApiAuthParams
             {
-                AccessToken = GetAccessToken()
+                AccessToken = GetAccessToken().Result
             });
 
             string[] files = GetFolderFiles();
             long albumId = AlbumSelector(api);
             UploadPhotos(api, albumId, files); //сделать счетчик
-            Console.WriteLine($"{files.Length}/{files.Length} done");
             Console.ReadKey();
         }
 
-        private static string GetAccessToken()
+        async private static Task<string> GetAccessToken()
         {
             string url = "https://oauth.vk.com/authorize?client_id=7096347&display=page&scope=photos&redirect_uri=http://blank.org/&response_type=code&v=5.103";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -42,26 +42,28 @@ namespace VkBatchPhotoUploader
                 Console.Write("code=");
                 string code = Console.ReadLine();
 
-                var TokenParamsDict = new Dictionary<string, string>();
-                var Request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.vk.com/access_token");
-                var client = new HttpClient();
+                var tokenParamsDict = new Dictionary<string, string>();
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.vk.com/access_token");
 
-                TokenParamsDict.Add("client_id", "7096347");
-                TokenParamsDict.Add("client_secret", "dfem1KnHOVrDN21VHckc");
-                TokenParamsDict.Add("redirect_uri", "http://blank.org/");
-                TokenParamsDict.Add("code", code);
+                tokenParamsDict.Add("client_id", "7096347");
+                tokenParamsDict.Add("client_secret", "dfem1KnHOVrDN21VHckc");
+                tokenParamsDict.Add("redirect_uri", "http://blank.org/");
+                tokenParamsDict.Add("code", code);
 
-                Request.Content = new FormUrlEncodedContent(TokenParamsDict);
+                request.Content = new FormUrlEncodedContent(tokenParamsDict);
 
-                string Response = client.SendAsync(Request).Result
-                    .Content.ReadAsStringAsync().Result;
+                using (var client = new HttpClient())
+                {
+                    string response = await client.SendAsync(request)
+                    .Result.Content.ReadAsStringAsync();
 
-                return JObject.Parse(Response)
-                    .GetValue("access_token").ToString();
+                    return JObject.Parse(response)
+                        .GetValue("access_token").ToString();
+                }
             }
             else
             {
-                throw new Exception("only windows for now");
+                throw new NotSupportedException();
             }
         }
 
@@ -85,9 +87,10 @@ namespace VkBatchPhotoUploader
         private static long AlbumSelector(VkApi api)
         {
             var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
+            var rnd = new Random();
             for(int i = 0; i < albums.Count; i++)
             {
-                Console.BackgroundColor = (ConsoleColor)new Random().Next(1, 5);
+                Console.BackgroundColor = (ConsoleColor)rnd.Next(1, 5);
                 Console.Write("album#" + i.ToString());
                 Console.Write(" name: " + albums[i].Title);
                 Console.Write(", ID: " + albums[i].Id.ToString());
@@ -112,15 +115,15 @@ namespace VkBatchPhotoUploader
                 Console.Title = "Uploading: " + files[i];
                 var uploadServer = api.Photo.GetUploadServer(albumId);
 
-                var wc = new WebClient();
-                var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
-
-                api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
+                using (var wc = new WebClient())
                 {
-                    SaveFileResponse = responseFile,
-                    AlbumId = albumId
-                });
-
+                    var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
+                    api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
+                    {
+                        SaveFileResponse = responseFile,
+                        AlbumId = albumId
+                    });
+                }
                 double progress = (double)(i+1) / files.Length;
                 progressBar.Report(progress);
             }
