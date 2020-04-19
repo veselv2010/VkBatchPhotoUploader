@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Windows.Forms;
-using System.IO;
 using System.Collections.Generic;
-using VkNet;
-using System.Text;
-using System.Threading;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
+using VkNet;
 using VkNet.Model;
 using Newtonsoft.Json.Linq;
 
@@ -28,9 +25,9 @@ namespace VkBatchPhotoUploader
             });
 
             string[] files = GetFolderFiles();
-            string albumId = AlbumSelector(api);
-            UploadPhotos(api, int.Parse(albumId), files);
-
+            long albumId = AlbumSelector(api);
+            UploadPhotos(api, albumId, files); //сделать счетчик
+            Console.WriteLine($"{files.Length}/{files.Length} done");
             Console.ReadKey();
         }
 
@@ -85,41 +82,45 @@ namespace VkBatchPhotoUploader
             }
         }
 
-        private static string AlbumSelector(VkApi api)
+        private static long AlbumSelector(VkApi api)
         {
             var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
             for(int i = 0; i < albums.Count; i++)
             {
+                Console.BackgroundColor = (ConsoleColor)new Random().Next(0, 12);
                 Console.Write("album#" + i.ToString());
                 Console.Write(" name: " + albums[i].Title);
                 Console.Write(", ID: " + albums[i].Id.ToString());
                 Console.WriteLine(", photos count: " + albums[i].Size.ToString());
             }
             Console.Write("# of desired album: ");
+
             if(int.TryParse(Console.ReadLine(), out int id))
             {
-                return albums[id].Id.ToString();
+                return albums[id].Id;
             }
-            return null;
+
+            return 0;
         }
 
-        private static void UploadPhotos(VkApi api, int albumId, string[] files)
+        private static void UploadPhotos(VkApi api, long albumId, string[] files)
         {
             var progressBar = new ProgressBar();
             for (int i = 0; i < files.Length; i++)
             {
-                // Получить адрес сервера для загрузки.
+                Console.Title = "Uploading: " + files[i];
                 var uploadServer = api.Photo.GetUploadServer(albumId);
-                // Загрузить файл.
+
                 var wc = new WebClient();
                 var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
-                // Сохранить загруженный файл
-                var photos = api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
+
+                api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
                 {
                     SaveFileResponse = responseFile,
                     AlbumId = albumId
                 });
-                double progress = (double)i+1 / files.Length;
+
+                double progress = (double)(i+1) / files.Length;
                 progressBar.Report(progress);
             }
         }
