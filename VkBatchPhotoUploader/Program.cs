@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using VkNet;
 using VkNet.Model;
@@ -17,16 +18,16 @@ namespace VkBatchPhotoUploader
     class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        async static Task Main()
         {
-            var api = new VkApi();
+            using var api = new VkApi();
             api.Authorize(new ApiAuthParams
             {
-                AccessToken = GetAccessToken().Result
+                AccessToken = await GetAccessToken()
             });
 
             string[] files = GetFolderFiles();
-            long albumId = AlbumSelector(api);
+            long albumId = await AlbumSelector(api);
             UploadPhotos(api, albumId, files); //сделать счетчик
             Console.ReadKey();
         }
@@ -54,10 +55,10 @@ namespace VkBatchPhotoUploader
 
                 using (var client = new HttpClient())
                 {
-                    string response = await client.SendAsync(request)
-                    .Result.Content.ReadAsStringAsync();
+                    var resp = await client.SendAsync(request);
+                    var respContent = await resp.Content.ReadAsStringAsync();
 
-                    return JObject.Parse(response)
+                    return JObject.Parse(respContent)
                         .GetValue("access_token").ToString();
                 }
             }
@@ -84,11 +85,11 @@ namespace VkBatchPhotoUploader
             }
         }
 
-        private static long AlbumSelector(VkApi api)
+        async private static Task<long> AlbumSelector(VkApi api)
         {
-            var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
+            var albums = await api.Photo.GetAlbumsAsync(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
             var rnd = new Random();
-            for(int i = 0; i < albums.Count; i++)
+            for (int i = 0; i < albums.Count; i++)
             {
                 Console.BackgroundColor = (ConsoleColor)rnd.Next(1, 5);
                 Console.Write("album#" + i.ToString());
@@ -99,7 +100,7 @@ namespace VkBatchPhotoUploader
             Console.BackgroundColor = 0;
             Console.Write("# of desired album: ");
 
-            if(int.TryParse(Console.ReadLine(), out int id))
+            if (int.TryParse(Console.ReadLine(), out int id))
             {
                 return albums[id].Id;
             }
@@ -107,24 +108,40 @@ namespace VkBatchPhotoUploader
             return 0;
         }
 
-        private static void UploadPhotos(VkApi api, long albumId, string[] files)
+        async private static void UploadPhotos(VkApi api, long albumId, string[] files)
         {
             var progressBar = new ProgressBar();
+            using var wc = new WebClient();
             for (int i = 0; i < files.Length; i++)
             {
                 Console.Title = "Uploading: " + files[i];
-                var uploadServer = api.Photo.GetUploadServer(albumId);
-
-                using (var wc = new WebClient())
+                var uploadServer = await api.Photo.GetUploadServerAsync(albumId);
+                var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
+                try
                 {
-                    var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
-                    api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
+                    await api.Photo.SaveAsync(new VkNet.Model.RequestParams.PhotoSaveParams
                     {
                         SaveFileResponse = responseFile,
                         AlbumId = albumId
                     });
                 }
-                double progress = (double)(i+1) / files.Length;
+                catch (Exception ex)
+                {
+                    if (ex.Message == "Flood control")
+                    {
+                        progressBar.Dispose();
+                        Console.WriteLine(ex.Message + ": try changing ip or wait for 24 hours");
+                        return;
+                    }
+                    else
+                    {
+                        Console.WriteLine(ex.Message + ": network error, retrying in 5 seconds...");
+                        Thread.Sleep(5000);
+                        i--;
+                        continue;
+                    }
+                }
+                double progress = (double)(i + 1) / files.Length;
                 progressBar.Report(progress);
             }
         }
