@@ -76,8 +76,8 @@ namespace VkBatchPhotoUploader
                 }
                 catch (VkNet.Exception.TooMuchOfTheSameTypeOfActionException ex)
                 {
-                    dialogManager.DisplayException(ex);
                     progressBar.Dispose();
+                    dialogManager.DisplayException(ex);
                     return;
                 }
                 catch (WebException ex)
