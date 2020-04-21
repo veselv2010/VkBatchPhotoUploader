@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using VkNet.Utils;
 using VkNet.Model;
 
@@ -35,7 +33,6 @@ namespace VkBatchPhotoUploader
                 Console.WriteLine(": try changing ip or wait for 24 hours");
             if (ex is System.Net.WebException)
                 Console.WriteLine(": network error retrying in 5 seconds...");
-
         }
     }
 }

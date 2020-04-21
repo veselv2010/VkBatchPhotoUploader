@@ -23,13 +23,14 @@ namespace VkBatchPhotoUploader
                 consoleDialog.DisplayCodeRequest();
                 string code = Console.ReadLine();
 
-                var tokenParamsDict = new Dictionary<string, string>();
+                var tokenParamsDict = new Dictionary<string, string>
+                {
+                    { "client_id", "7096347" },
+                    { "client_secret", "dfem1KnHOVrDN21VHckc" },
+                    { "redirect_uri", "http://blank.org/" },
+                    { "code", code }
+                };
                 var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.vk.com/access_token");
-
-                tokenParamsDict.Add("client_id", "7096347");
-                tokenParamsDict.Add("client_secret", "dfem1KnHOVrDN21VHckc");
-                tokenParamsDict.Add("redirect_uri", "http://blank.org/");
-                tokenParamsDict.Add("code", code);
 
                 request.Content = new FormUrlEncodedContent(tokenParamsDict);
 
