@@ -43,8 +43,9 @@ namespace VkBatchPhotoUploader
             var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
 
             dialogManager.DisplayAlbumRequest(albums);
+            string albumIndex = dialogManager.AskAlbum();
 
-            if (int.TryParse(Console.ReadLine(), out int id))
+            if (int.TryParse(albumIndex, out int id))
             {
                 return (id >= 0 && id < albums.Count) ?
                     albums[id].Id :
@@ -58,7 +59,7 @@ namespace VkBatchPhotoUploader
 
         private void UploadPhotos(VkApi api, long albumId, string[] files)
         {
-            var progressBar = new ProgressBar();
+            using var progressBar = new ProgressBar();
             using var wc = new WebClient();
             for (int i = 0; i < files.Length; i++)
             {
@@ -75,8 +76,8 @@ namespace VkBatchPhotoUploader
                 }
                 catch (VkNet.Exception.TooMuchOfTheSameTypeOfActionException ex)
                 {
-                    progressBar.Dispose();
                     dialogManager.DisplayException(ex);
+                    progressBar.Dispose();
                     return;
                 }
                 catch (WebException ex)

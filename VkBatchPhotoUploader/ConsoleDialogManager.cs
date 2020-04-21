@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using VkNet.Utils;
 using VkNet.Model;
 
@@ -6,24 +7,30 @@ namespace VkBatchPhotoUploader
 {
     class ConsoleDialogManager
     {
-        public void DisplayCodeRequest()
+        public string AskCode()
         {
             Console.Write("code = ");
+            return Console.ReadLine();
         }
 
-        public void DisplayAlbumRequest(VkCollection<PhotoAlbum> albums)
+        public string AskAlbum()
+        {
+            Console.Write("# of desired album: ");
+            return Console.ReadLine();
+        }
+
+        public void DisplayAlbumRequest(IList<PhotoAlbum> albums)
         {
             var rnd = new Random();
-            for (int i = 0; i < albums.Count; i++)
+            foreach(var album in albums) 
             {
                 Console.BackgroundColor = (ConsoleColor)rnd.Next(1, 5);
-                Console.Write("album#" + i.ToString());
-                Console.Write(" name: " + albums[i].Title);
-                Console.Write(", ID: " + albums[i].Id.ToString());
-                Console.WriteLine(", photos count: " + albums[i].Size.ToString());
+                Console.Write("album#" + albums.IndexOf(album));
+                Console.Write(" name: " + album.Title);
+                Console.Write(", ID: " + album.Id.ToString());
+                Console.WriteLine(", photos count: " + album.Size.ToString());
             }
             Console.BackgroundColor = 0;
-            Console.Write("# of desired album: ");
         }
 
         public void DisplayException(Exception ex)
