@@ -8,15 +8,19 @@ namespace VkBatchPhotoUploader
         [STAThread]
         static void Main()
         {
-            var vkAppSettings = new VkAppSettings();
+            var vkAppSettings = new VkAppSettings("7096347",
+                "dfem1KnHOVrDN21VHckc", "http://blank.org/");
+
             var consoleDialogManager = new ConsoleDialogManager();
 
             var vkAuthenticator = new VkAuthenticator(vkAppSettings);
 
             string code = consoleDialogManager.AskCode();
-            var authorizedApi = vkAuthenticator.AuthorizeAsync(code).Result;
+            string accessToken = vkAuthenticator.GetAccessTokenAsync(code).Result;
 
-            var vkPhotoUploader = new VkPhotoUploader(authorizedApi, 
+            var api = vkAuthenticator.GetAuthorizedApiAsync(accessToken).Result;
+
+            var vkPhotoUploader = new VkPhotoUploader(api, 
                 consoleDialogManager);
 
             Console.ReadKey();

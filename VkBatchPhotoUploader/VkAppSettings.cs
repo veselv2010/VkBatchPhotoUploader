@@ -4,8 +4,14 @@ namespace VkBatchPhotoUploader
 {
     public class VkAppSettings
     {
-        public string client_id = "7096347";
-        public string client_secret = "dfem1KnHOVrDN21VHckc";
-        public string redirect_uri = "http://blank.org/";
+        public string clientId { get; }
+        public string clientSecret { get; }
+        public string redirectUri { get; }
+        public VkAppSettings(string clientId, string clientSecret, string redirectUri)
+        {
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.redirectUri = redirectUri;
+        }
     }
 }

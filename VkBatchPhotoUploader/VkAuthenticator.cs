@@ -21,8 +21,8 @@ namespace VkBatchPhotoUploader
             this.client = new HttpClient();
             this.settings = settings;
 
-            string url = $"https://oauth.vk.com/authorize?client_id={settings.client_id}&" +
-                $"display=page&scope=photos&redirect_uri={settings.redirect_uri}&response_type=code&v=5.103";
+            string url = $"https://oauth.vk.com/authorize?client_id={settings.clientId}&" +
+                $"display=page&scope=photos&redirect_uri={settings.redirectUri}&response_type=code&v=5.103";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -34,13 +34,13 @@ namespace VkBatchPhotoUploader
                 throw new NotSupportedException();
             }
         }
-        async public Task<VkApi> AuthorizeAsync(string code)
+        async public Task<string> GetAccessTokenAsync(string code)
         {
             var tokenParamsDict = new Dictionary<string, string>
                 {
-                    { "client_id", this.settings.client_id },
-                    { "client_secret", this.settings.client_secret },
-                    { "redirect_uri", this.settings.redirect_uri },
+                    { "client_id", this.settings.clientId },
+                    { "client_secret", this.settings.clientSecret },
+                    { "redirect_uri", this.settings.redirectUri },
                     { "code", code }
                 };
 
@@ -51,9 +51,11 @@ namespace VkBatchPhotoUploader
             var resp = await client.SendAsync(request);
             var respContent = await resp.Content.ReadAsStringAsync();
 
-            string accessToken = JObject.Parse(respContent)
+            return JObject.Parse(respContent)
                 .GetValue("access_token").ToString();
-
+        }
+        async public Task<VkApi> GetAuthorizedApiAsync(string accessToken)
+        {
             await api.AuthorizeAsync(new ApiAuthParams
             {
                 AccessToken = accessToken

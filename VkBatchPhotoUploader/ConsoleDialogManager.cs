@@ -22,13 +22,13 @@ namespace VkBatchPhotoUploader
         public void DisplayAlbumRequest(IList<PhotoAlbum> albums)
         {
             var rnd = new Random();
-            foreach(var album in albums) 
+            for(int i = 0; i < albums.Count; i++)
             {
                 Console.BackgroundColor = (ConsoleColor)rnd.Next(1, 5);
-                Console.Write("album#" + albums.IndexOf(album));
-                Console.Write(" name: " + album.Title);
-                Console.Write(", ID: " + album.Id.ToString());
-                Console.WriteLine(", photos count: " + album.Size.ToString());
+                Console.Write("album#" + i.ToString());
+                Console.Write(" name: " + albums[i].Title);
+                Console.Write(", ID: " + albums[i].Id.ToString());
+                Console.WriteLine(", photos count: " + albums[i].Size.ToString());
             }
             Console.BackgroundColor = 0;
         }
