@@ -15,6 +15,7 @@ namespace VkBatchPhotoUploader
         public VkPhotoUploader(IVkApi api, IDialogManager dialogManager)
         {
             this.api = api;
+            this.dialogManager = dialogManager;
         }
         public string[] GetFolderFiles()
         {
