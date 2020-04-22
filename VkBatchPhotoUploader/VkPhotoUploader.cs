@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 using VkNet.Abstractions;
@@ -25,7 +27,19 @@ namespace VkBatchPhotoUploader
 
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
-                    return Directory.GetFiles(fbd.SelectedPath);
+                    string pattern = ".*(.png|.jfif|.jpg|.jpeg|.heic|.gif)";
+                    Regex extFilter = new Regex(pattern);
+
+                    string[] files = Directory.GetFiles(fbd.SelectedPath);
+                    List<string> filesList = new List<string>();
+
+                    foreach (string file in files)
+                    {     
+                        if (extFilter.IsMatch(file))
+                            filesList.Add(file);
+                    }
+
+                    return filesList.ToArray();
                 }
                 else
                 {
