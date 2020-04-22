@@ -4,25 +4,15 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using VkNet;
-using VkNet.Model;
-using VkNet.Utils;
 using VkNet.Abstractions;
 
 namespace VkBatchPhotoUploader
 {
     class VkPhotoUploader
     {
-        public delegate void AlbumsRequestHandler(VkCollection<PhotoAlbum> albums);
-        public delegate void DisplayMessageHandler(string message);
-        public delegate void DisplayExceptionHandler(Exception ex);
-        public delegate string UserInputHandler();
-        public event AlbumsRequestHandler DisplayAlbumsRequest;
-        public event DisplayMessageHandler Display;
-        public event DisplayExceptionHandler DisplayException;
-        public event UserInputHandler Ask;
+        private IDialogManager dialogManager { get; }
         private IVkApi api { get; }
-        public VkPhotoUploader(IVkApi api)
+        public VkPhotoUploader(IVkApi api, IDialogManager dialogManager)
         {
             this.api = api;
         }
@@ -46,10 +36,10 @@ namespace VkBatchPhotoUploader
         {
             var albums = this.api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
 
-            DisplayAlbumsRequest?.Invoke(albums);
-            Display?.Invoke("# of desired album: ");
+            dialogManager.DisplayMessage(albums);
+            dialogManager.DisplayMessage("# of desired album: ");
 
-            if (int.TryParse(Ask?.Invoke(), out int id))
+            if (int.TryParse(dialogManager.Ask(), out int id))
             {
                 return (id >= 0 && id < albums.Count) ?
                     albums[id].Id :
@@ -81,12 +71,12 @@ namespace VkBatchPhotoUploader
                 catch (VkNet.Exception.TooMuchOfTheSameTypeOfActionException ex)
                 {
                     progressBar.Dispose();
-                    DisplayException?.Invoke(ex);
+                    dialogManager.DisplayMessage(ex);
                     return;
                 }
                 catch (WebException ex)
                 {
-                    DisplayException?.Invoke(ex);
+                    dialogManager.DisplayMessage(ex);
                     Thread.Sleep(5000);
                     i--;
                     continue;

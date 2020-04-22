@@ -11,16 +11,16 @@ using Newtonsoft.Json.Linq;
 
 namespace VkBatchPhotoUploader
 {
-    class VkAuthenticator
+    class VkAuthenticator 
     {
-        public delegate void MessageHandler(string message);
-        public event MessageHandler Display;
-        private HttpClient client;
-        private VkAppSettings settings;
-        public VkAuthenticator(VkAppSettings settings)
+        private IDialogManager dialogManager { get; }
+        private HttpClient client { get; }
+        private VkAppSettings settings { get; }
+        public VkAuthenticator(VkAppSettings settings, IDialogManager dialogManager)
         {
             this.client = new HttpClient();
             this.settings = settings;
+            this.dialogManager = dialogManager;
         }
 
         public void OpenCodePage()
@@ -33,7 +33,7 @@ namespace VkBatchPhotoUploader
                 url = url.Replace("&", "^&");
                 Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
 
-                Display?.Invoke("code = ");
+                dialogManager.DisplayMessage("code = ");
             }
             else
             {

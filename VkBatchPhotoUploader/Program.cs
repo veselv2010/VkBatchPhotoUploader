@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace VkBatchPhotoUploader
 {
@@ -11,10 +10,9 @@ namespace VkBatchPhotoUploader
             var vkAppSettings = new VkAppSettings("7096347",
                 "dfem1KnHOVrDN21VHckc", "http://blank.org/");
 
-            var dialogManager = new DialogManager();
+            var dialogManager = new ConsoleDialogManager();
 
-            var vkAuthenticator = new VkAuthenticator(vkAppSettings);
-            vkAuthenticator.Display += dialogManager.DisplayMessage;
+            var vkAuthenticator = new VkAuthenticator(vkAppSettings, dialogManager);
 
             vkAuthenticator.OpenCodePage();
             string code = dialogManager.Ask();
@@ -22,12 +20,7 @@ namespace VkBatchPhotoUploader
 
             var api = vkAuthenticator.GetAuthorizedApiAsync(accessToken).Result;
 
-            var vkPhotoUploader = new VkPhotoUploader(api);
-
-            vkPhotoUploader.Display += dialogManager.DisplayMessage;
-            vkPhotoUploader.DisplayAlbumsRequest += dialogManager.DisplayMessage;
-            vkPhotoUploader.DisplayException += dialogManager.DisplayMessage;
-            vkPhotoUploader.Ask += dialogManager.Ask;
+            var vkPhotoUploader = new VkPhotoUploader(api, dialogManager);
 
             string[] photos = vkPhotoUploader.GetFolderFiles();
             long albumId = vkPhotoUploader.AlbumSelector();

@@ -4,7 +4,15 @@ using VkNet.Model;
 
 namespace VkBatchPhotoUploader
 {
-    class DialogManager
+    interface IDialogManager
+    {
+        string Ask();
+        void DisplayMessage(string message);
+        void DisplayMessage(IList<PhotoAlbum> albums);
+        void DisplayMessage(Exception ex);
+    }
+
+    class ConsoleDialogManager : IDialogManager
     {
         public string Ask()
         {
