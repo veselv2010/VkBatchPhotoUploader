@@ -12,7 +12,7 @@ namespace VkBatchPhotoUploader
 
             var dialogManager = new ConsoleDialogManager();
 
-            var vkAuthenticator = new VkAuthenticator(vkAppSettings, dialogManager);
+            using var vkAuthenticator = new VkAuthenticator(vkAppSettings, dialogManager);
 
             vkAuthenticator.OpenCodePage();
             string code = dialogManager.Ask();

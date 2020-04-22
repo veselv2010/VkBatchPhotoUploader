@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 
 namespace VkBatchPhotoUploader
 {
-    class VkAuthenticator
+    class VkAuthenticator : IDisposable
     {
         private readonly IDialogManager dialogManager;
         private readonly HttpClient client;
@@ -44,7 +44,7 @@ namespace VkBatchPhotoUploader
 
         public async Task<string> GetAccessTokenAsync(string code)
         {
-            var tokenParamsDict = CreateDictionaryFrom(code);
+            var tokenParamsDict = CreateDictionaryFrom(settings, code);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.vk.com/access_token");
 
@@ -68,15 +68,20 @@ namespace VkBatchPhotoUploader
             return api;
         }
 
-        private Dictionary<string, string> CreateDictionaryFrom(string code)
+        private Dictionary<string, string> CreateDictionaryFrom(VkAppSettings settings, string code)
         {
             return new Dictionary<string, string>
             {
-                { "client_id", this.settings.ClientId },
-                { "client_secret", this.settings.ClientSecret },
-                { "redirect_uri", this.settings.RedirectUri },
+                { "client_id", settings.ClientId },
+                { "client_secret", settings.ClientSecret },
+                { "redirect_uri", settings.RedirectUri },
                 { "code", code }
             };
+        }
+
+        public void Dispose()
+        {
+            this.client.Dispose();
         }
     }
 }
