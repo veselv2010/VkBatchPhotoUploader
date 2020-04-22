@@ -70,6 +70,9 @@ namespace VkBatchPhotoUploader
         {
             using var progressBar = new ProgressBar();
             using var wc = new WebClient();
+
+            dialogManager.DisplayMessage($"uploading {photos.Length} files\n");
+
             for (int i = 0; i < photos.Length; i++)
             {
                 Console.Title = "Uploading: " + photos[i];
