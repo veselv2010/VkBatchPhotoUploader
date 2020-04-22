@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using VkNet;
 using VkNet.Model;
+using VkNet.Abstractions;
 using Newtonsoft.Json.Linq;
 
 namespace VkBatchPhotoUploader
@@ -59,7 +60,7 @@ namespace VkBatchPhotoUploader
             return JObject.Parse(respContent)
                 .GetValue("access_token").ToString();
         }
-        async public Task<VkApi> GetAuthorizedApiAsync(string accessToken)
+        async public Task<IVkApi> GetAuthorizedApiAsync(string accessToken)
         {
             var api = new VkApi();
             await api.AuthorizeAsync(new ApiAuthParams
