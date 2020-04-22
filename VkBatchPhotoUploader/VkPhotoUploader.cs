@@ -10,8 +10,8 @@ namespace VkBatchPhotoUploader
 {
     class VkPhotoUploader
     {
-        private IDialogManager dialogManager { get; }
-        private IVkApi api { get; }
+        private readonly IDialogManager dialogManager;
+        private readonly IVkApi api;
         public VkPhotoUploader(IVkApi api, IDialogManager dialogManager)
         {
             this.api = api;
@@ -59,10 +59,10 @@ namespace VkBatchPhotoUploader
             for (int i = 0; i < photos.Length; i++)
             {
                 Console.Title = "Uploading: " + photos[i];
-                var uploadServer = api.Photo.GetUploadServer(albumId);
-                var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, photos[i]));
                 try
                 {
+                    var uploadServer = api.Photo.GetUploadServer(albumId);
+                    var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, photos[i]));
                     api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
                     {
                         SaveFileResponse = responseFile,

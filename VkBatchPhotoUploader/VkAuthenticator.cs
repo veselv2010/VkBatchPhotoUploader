@@ -11,11 +11,12 @@ using Newtonsoft.Json.Linq;
 
 namespace VkBatchPhotoUploader
 {
-    class VkAuthenticator 
+    class VkAuthenticator
     {
-        private IDialogManager dialogManager { get; }
-        private HttpClient client { get; }
-        private VkAppSettings settings { get; }
+        private readonly IDialogManager dialogManager;
+        private readonly HttpClient client;
+        private readonly VkAppSettings settings;
+
         public VkAuthenticator(VkAppSettings settings, IDialogManager dialogManager)
         {
             this.client = new HttpClient();
@@ -40,15 +41,10 @@ namespace VkBatchPhotoUploader
                 throw new NotSupportedException();
             }
         }
-        async public Task<string> GetAccessTokenAsync(string code)
+
+        public async Task<string> GetAccessTokenAsync(string code)
         {
-            var tokenParamsDict = new Dictionary<string, string>
-                {
-                    { "client_id", this.settings.ClientId },
-                    { "client_secret", this.settings.ClientSecret },
-                    { "redirect_uri", this.settings.RedirectUri },
-                    { "code", code }
-                };
+            var tokenParamsDict = CreateDictionaryFrom(code);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.vk.com/access_token");
 
@@ -60,7 +56,8 @@ namespace VkBatchPhotoUploader
             return JObject.Parse(respContent)
                 .GetValue("access_token").ToString();
         }
-        async public Task<IVkApi> GetAuthorizedApiAsync(string accessToken)
+
+        public async Task<IVkApi> GetAuthorizedApiAsync(string accessToken)
         {
             var api = new VkApi();
             await api.AuthorizeAsync(new ApiAuthParams
@@ -69,6 +66,17 @@ namespace VkBatchPhotoUploader
             });
 
             return api;
+        }
+
+        private Dictionary<string, string> CreateDictionaryFrom(string code)
+        {
+            return new Dictionary<string, string>
+            {
+                { "client_id", this.settings.ClientId },
+                { "client_secret", this.settings.ClientSecret },
+                { "redirect_uri", this.settings.RedirectUri },
+                { "code", code }
+            };
         }
     }
 }

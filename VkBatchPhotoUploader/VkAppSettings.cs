@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace VkBatchPhotoUploader
 {
@@ -7,6 +8,7 @@ namespace VkBatchPhotoUploader
         public string ClientId { get; }
         public string ClientSecret { get; }
         public string RedirectUri { get; }
+
         public VkAppSettings(string clientId, string clientSecret, string redirectUri)
         {
             this.ClientId = clientId;
