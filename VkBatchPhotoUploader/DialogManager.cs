@@ -1,39 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using VkNet.Utils;
 using VkNet.Model;
 
 namespace VkBatchPhotoUploader
 {
-    class ConsoleDialogManager
+    class DialogManager
     {
-        public string AskCode()
+        public string Ask()
         {
-            Console.Write("code = ");
             return Console.ReadLine();
         }
 
-        public string AskAlbum()
+        public void DisplayMessage(string message)
         {
-            Console.Write("# of desired album: ");
-            return Console.ReadLine();
+            Console.Write(message);
         }
 
-        public void DisplayAlbumRequest(IList<PhotoAlbum> albums)
+        public void DisplayMessage(IList<PhotoAlbum> albums)
         {
             var rnd = new Random();
             for(int i = 0; i < albums.Count; i++)
             {
+                var album = albums[i];
+
                 Console.BackgroundColor = (ConsoleColor)rnd.Next(1, 5);
                 Console.Write("album#" + i.ToString());
-                Console.Write(" name: " + albums[i].Title);
-                Console.Write(", ID: " + albums[i].Id.ToString());
-                Console.WriteLine(", photos count: " + albums[i].Size.ToString());
+                Console.Write(" name: " + album.Title);
+                Console.Write(", ID: " + album.Id.ToString());
+                Console.WriteLine(", photos count: " + album.Size.ToString());
             }
             Console.BackgroundColor = 0;
         }
 
-        public void DisplayException(Exception ex)
+        public void DisplayMessage(Exception ex)
         {
             Console.WriteLine(ex.Message);
             if (ex is VkNet.Exception.TooMuchOfTheSameTypeOfActionException)

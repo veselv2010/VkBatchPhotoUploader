@@ -5,24 +5,28 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using VkNet;
+using VkNet.Model;
+using VkNet.Utils;
+using VkNet.Abstractions;
 
 namespace VkBatchPhotoUploader
 {
     class VkPhotoUploader
     {
-        private ConsoleDialogManager dialogManager { get; }
-        private VkApi api { get; }
-        private string[] files { get; set; }
-        private long albumId { get; set; }
-        public VkPhotoUploader(VkApi api, ConsoleDialogManager dialogManager)
+        public delegate void AlbumsRequestHandler(VkCollection<PhotoAlbum> albums);
+        public delegate void DisplayMessageHandler(string message);
+        public delegate void DisplayExceptionHandler(Exception ex);
+        public delegate string UserInputHandler();
+        public event AlbumsRequestHandler DisplayAlbumsRequest;
+        public event DisplayMessageHandler Display;
+        public event DisplayExceptionHandler DisplayException;
+        public event UserInputHandler Ask;
+        private IVkApi api { get; }
+        public VkPhotoUploader(IVkApi api)
         {
             this.api = api;
-            this.dialogManager = dialogManager;
-            this.files = GetFolderFiles();
-            this.albumId = AlbumSelector(this.api);
-            UploadPhotos(this.api, this.albumId, this.files);
         }
-        private string[] GetFolderFiles()
+        public string[] GetFolderFiles()
         {
             using (var fbd = new FolderBrowserDialog())
             {
@@ -38,34 +42,34 @@ namespace VkBatchPhotoUploader
                 }
             }
         }
-        private long AlbumSelector(VkApi api)
+        public long AlbumSelector()
         {
-            var albums = api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
+            var albums = this.api.Photo.GetAlbums(new VkNet.Model.RequestParams.PhotoGetAlbumsParams { });
 
-            dialogManager.DisplayAlbumRequest(albums);
-            string albumIndex = dialogManager.AskAlbum();
+            DisplayAlbumsRequest?.Invoke(albums);
+            Display?.Invoke("# of desired album: ");
 
-            if (int.TryParse(albumIndex, out int id))
+            if (int.TryParse(Ask?.Invoke(), out int id))
             {
                 return (id >= 0 && id < albums.Count) ?
                     albums[id].Id :
-                    AlbumSelector(api);
+                    AlbumSelector();
             }
             else
             {
-                return AlbumSelector(api);
+                return AlbumSelector();
             }
         }
 
-        private void UploadPhotos(VkApi api, long albumId, string[] files)
+        public void UploadPhotos(long albumId, string[] photos)
         {
             using var progressBar = new ProgressBar();
             using var wc = new WebClient();
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < photos.Length; i++)
             {
-                Console.Title = "Uploading: " + files[i];
+                Console.Title = "Uploading: " + photos[i];
                 var uploadServer = api.Photo.GetUploadServer(albumId);
-                var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, files[i]));
+                var responseFile = Encoding.ASCII.GetString(wc.UploadFile(uploadServer.UploadUrl, photos[i]));
                 try
                 {
                     api.Photo.Save(new VkNet.Model.RequestParams.PhotoSaveParams
@@ -77,18 +81,18 @@ namespace VkBatchPhotoUploader
                 catch (VkNet.Exception.TooMuchOfTheSameTypeOfActionException ex)
                 {
                     progressBar.Dispose();
-                    dialogManager.DisplayException(ex);
+                    DisplayException?.Invoke(ex);
                     return;
                 }
                 catch (WebException ex)
                 {
-                    dialogManager.DisplayException(ex);
+                    DisplayException?.Invoke(ex);
                     Thread.Sleep(5000);
                     i--;
                     continue;
                 }
 
-                double progress = (double)(i + 1) / files.Length;
+                double progress = (double)(i + 1) / photos.Length;
                 progressBar.Report(progress);
             }
         }

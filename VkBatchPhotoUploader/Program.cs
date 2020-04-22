@@ -11,18 +11,29 @@ namespace VkBatchPhotoUploader
             var vkAppSettings = new VkAppSettings("7096347",
                 "dfem1KnHOVrDN21VHckc", "http://blank.org/");
 
-            var consoleDialogManager = new ConsoleDialogManager();
+            var dialogManager = new DialogManager();
 
             var vkAuthenticator = new VkAuthenticator(vkAppSettings);
+            vkAuthenticator.Display += dialogManager.DisplayMessage;
 
-            string code = consoleDialogManager.AskCode();
+            vkAuthenticator.OpenCodePage();
+            string code = dialogManager.Ask();
             string accessToken = vkAuthenticator.GetAccessTokenAsync(code).Result;
 
             var api = vkAuthenticator.GetAuthorizedApiAsync(accessToken).Result;
 
-            var vkPhotoUploader = new VkPhotoUploader(api, 
-                consoleDialogManager);
+            var vkPhotoUploader = new VkPhotoUploader(api);
 
+            vkPhotoUploader.Display += dialogManager.DisplayMessage;
+            vkPhotoUploader.DisplayAlbumsRequest += dialogManager.DisplayMessage;
+            vkPhotoUploader.DisplayException += dialogManager.DisplayMessage;
+            vkPhotoUploader.Ask += dialogManager.Ask;
+
+            string[] photos = vkPhotoUploader.GetFolderFiles();
+            long albumId = vkPhotoUploader.AlbumSelector();
+
+            vkPhotoUploader.UploadPhotos(albumId, photos);
+            
             Console.ReadKey();
         }
     }

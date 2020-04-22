@@ -12,22 +12,27 @@ namespace VkBatchPhotoUploader
 {
     class VkAuthenticator
     {
+        public delegate void MessageHandler(string message);
+        public event MessageHandler Display;
         private HttpClient client;
-        private VkApi api;
         private VkAppSettings settings;
         public VkAuthenticator(VkAppSettings settings)
         {
-            this.api = new VkApi();
             this.client = new HttpClient();
             this.settings = settings;
+        }
 
-            string url = $"https://oauth.vk.com/authorize?client_id={settings.clientId}&" +
-                $"display=page&scope=photos&redirect_uri={settings.redirectUri}&response_type=code&v=5.103";
+        public void OpenCodePage()
+        {
+            string url = $"https://oauth.vk.com/authorize?client_id={settings.ClientId}&" +
+                $"display=page&scope=photos&redirect_uri={settings.RedirectUri}&response_type=code&v=5.103";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 url = url.Replace("&", "^&");
                 Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+
+                Display?.Invoke("code = ");
             }
             else
             {
@@ -38,9 +43,9 @@ namespace VkBatchPhotoUploader
         {
             var tokenParamsDict = new Dictionary<string, string>
                 {
-                    { "client_id", this.settings.clientId },
-                    { "client_secret", this.settings.clientSecret },
-                    { "redirect_uri", this.settings.redirectUri },
+                    { "client_id", this.settings.ClientId },
+                    { "client_secret", this.settings.ClientSecret },
+                    { "redirect_uri", this.settings.RedirectUri },
                     { "code", code }
                 };
 
@@ -56,6 +61,7 @@ namespace VkBatchPhotoUploader
         }
         async public Task<VkApi> GetAuthorizedApiAsync(string accessToken)
         {
+            var api = new VkApi();
             await api.AuthorizeAsync(new ApiAuthParams
             {
                 AccessToken = accessToken
